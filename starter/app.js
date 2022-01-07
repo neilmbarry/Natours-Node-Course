@@ -10,9 +10,10 @@ const app = express();
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
-app.use(express.json());
+app.use(express.json()); //Access to body object
 
 app.use((req, res, next) => {
+  //Random middleware
   console.log('Hello from the middleware!');
   next();
 });
