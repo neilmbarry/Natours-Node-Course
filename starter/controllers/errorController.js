@@ -21,13 +21,13 @@ const sendErrorProd = (err, res) => {
     // Programming or other unknown error: don't leak error details
   } else {
     // 1) Log Error
-    console.error('ERROR 👹');
+    console.error('ERROR 👹', err);
     // 2) Send generic message
     res.status(err.statusCode).json({
       status: 'error',
       message: 'Something went very wrong! 👹',
-      //   Remove below
-      //   error: err,
+      // Remove below
+      // error: err,
     });
   }
 };
@@ -35,6 +35,16 @@ const sendErrorProd = (err, res) => {
 const handleCastErrorDB = (err) => {
   const message = `Invalid ${err.path}: ${err.value}`;
   return new AppError(message, 400);
+};
+
+const handleTokenError = (err) => {
+  const message = `Invalid Token: ${err.message}`;
+  return new AppError(message, 401);
+};
+
+const handleTokenExpired = (err) => {
+  const message = `Expired Token: ${err.message}`;
+  return new AppError(message, 401);
 };
 
 const handleDuplicateFieldsDB = (err) => {
@@ -73,6 +83,12 @@ module.exports = (err, req, res, next) => {
     }
     if (errorName === 'ValidationError') {
       error = handleValidationErrorDB(error);
+    }
+    if (errorName === 'JsonWebTokenError') {
+      error = handleTokenError(error);
+    }
+    if (errorName === 'TokenExpiredError') {
+      error = handleTokenExpired(error);
     }
     sendErrorProd(error, res);
   }
