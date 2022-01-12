@@ -57,7 +57,7 @@ exports.login = catchAsync(async (req, res, next) => {
 
 exports.protect = catchAsync(async (req, res, next) => {
   // 1. Getting the token and check if it's there
-  console.log(req.headers);
+
   let token = '';
   if (
     req.headers.authorization &&
