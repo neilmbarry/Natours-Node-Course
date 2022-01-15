@@ -66,14 +66,12 @@ module.exports = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
-  const errorName = err.name;
-  console.log('Error name is: ------>', errorName);
-  const errorCode = err.code;
-
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, res);
   } else if (process.env.NODE_ENV === 'production') {
     let error = { ...err };
+    const errorName = err.name;
+    const errorCode = err.code;
 
     if (errorName === 'CastError') {
       error = handleCastErrorDB(error);

@@ -48,6 +48,11 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 
 userSchema.pre('save', async function (next) {
@@ -60,6 +65,22 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
+userSchema.pre('save', function (next) {
+  if (!this.isModified('password') || this.isNew) return next();
+
+  this.passwordChangedAt = Date.now() - 1000;
+  next();
+});
+
+userSchema.pre(/^find/, function (next) {
+  this.find({
+    active: {
+      $ne: false,
+    },
+  });
+  next();
+});
+
 userSchema.methods.correctPassword = async function (
   candidatePassword,
   userPassword
@@ -67,12 +88,20 @@ userSchema.methods.correctPassword = async function (
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
-userSchema.methods.changedPasswordAfter = async function (JWTTimestamp) {
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   if (this.passwordChangedAt) {
     const changedTimestamp = +this.passwordChangedAt.getTime() / 1000;
     return changedTimestamp > JWTTimestamp;
   }
   return false;
+};
+
+userSchema.methods.tokenExpired = function () {
+  if (this.passwordResetExpires) {
+    const expirationTime = +this.passwordResetExpires.getTime();
+    return expirationTime < Date.now();
+  }
+  return true;
 };
 
 userSchema.methods.createPasswordResetToken = function () {
