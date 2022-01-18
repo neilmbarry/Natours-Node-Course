@@ -82,10 +82,10 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
   // 2. Verification token
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-  console.log(decoded);
 
   // 3. Check if user still exists
   const freshUser = await User.findById(decoded.id);
+
   if (!freshUser)
     return next(
       new AppError('The user belonging to the token no longer exists', 401)
@@ -108,6 +108,7 @@ exports.restrictTo =
   (...roles) =>
   (req, res, next) => {
     // roles ['admin','lead-guild']
+
     if (!roles.includes(req.user.role)) {
       return next(
         new AppError('You do not have permission to perform this action', 403)
@@ -168,7 +169,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     .createHash('sha256')
     .update(req.params.token)
     .digest('hex');
-  console.log(hashedToken);
+  // console.log(hashedToken);
   const user = await User.findOne({ passwordResetToken: hashedToken });
   if (!user) {
     return next(new AppError('Could not find user. Please try again!'), 400);
