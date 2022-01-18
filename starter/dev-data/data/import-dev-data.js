@@ -43,7 +43,7 @@ const importData = async () => {
     console.log('Data successfully loaded!');
     process.exit();
   } catch (err) {
-    // console.log(err);
+    console.log(err);
     process.exit();
   }
 };
@@ -58,7 +58,7 @@ const deleteData = async () => {
     console.log('Data successfully deleted!');
     process.exit();
   } catch (err) {
-    // console.log(err);
+    console.log(err);
     process.exit();
   }
 };
