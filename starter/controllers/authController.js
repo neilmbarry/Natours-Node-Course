@@ -72,10 +72,13 @@ exports.login = catchAsync(async (req, res, next) => {
 exports.protect = catchAsync(async (req, res, next) => {
   // 1. Getting the token and check if it's there
 
+  //--------- NEEDS TO BE THOROUGHLY TESTED --------//
   const token =
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer') &&
-    req.headers.authorization.split(' ')[1];
+    (req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer') &&
+      req.headers.authorization.split(' ')[1]) ||
+    req.cookies.jwt;
+  //----------------------------------------------//
 
   if (!token) {
     return next(new AppError('You are not logged in!', 401));
@@ -104,6 +107,31 @@ exports.protect = catchAsync(async (req, res, next) => {
   next();
 });
 
+// TO BE USED WITH PUG TEMPLATES
+exports.isLoggedIn = catchAsync(async (req, res, next) => {
+  // 1. Getting the token and check if it's there
+
+  if (req.cookies.jwt) {
+    const decoded = await promisify(jwt.verify)(
+      req.cookies.jwt,
+      process.env.JWT_SECRET
+    );
+    const freshUser = await User.findById(decoded.id);
+
+    if (!freshUser) return next();
+
+    if (await freshUser.changedPasswordAfter(decoded.iat)) {
+      return next();
+    }
+
+    // GRANT ACCESS TO PROTECTED ROUTE
+    res.locals.user = freshUser;
+    return next();
+  }
+
+  next();
+});
+
 exports.restrictTo =
   (...roles) =>
   (req, res, next) => {
@@ -118,11 +146,6 @@ exports.restrictTo =
   };
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
-  // 1. Get user based posted email
-
-  //WILL THIS WORK?? vvvvvvvv---------vvvvvvvv
-  // const { email } = req.body;
-
   const user = await User.findOne({ email: req.body.email });
 
   if (!user) {
